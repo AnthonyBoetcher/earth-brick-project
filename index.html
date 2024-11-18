@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+      <title>Earth(brick) Project</title>  
+        <meta charset="utf-8" />
+        <!-- bootstrap -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+        <meta name="type" content="UCT Starlings project" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+        <!-- leaflet css -->
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
+        <!-- leaflet js -->
+ <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+ integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+ crossorigin=""></script>
+
+ <link rel="icon" type="image/x-icon" href="x5.png">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css">
+
+<style>
+body {
+  background-image: url('aa.jpg');
+}
+
+h4{
+    color: white;
+}
+
+footer{
+  margin: 20px 0 0 0;
+}
+  
+  #leaflet-map {
+    width: 100%;
+    height: 800px;
+    min-height: 100%;
+    max-height: 75vh;
+  }
+
+  /* z-index for for navbar */
+  .leaflet-top,
+  .leaflet-bottom {
+    z-index: 999;
+  }
+
+  #details {
+    background-color: #f9f9f9;
+    max-height: 75vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  #details .help {
+    flex-direction: column;
+    height: 100%;
+    min-height: 200px;
+  }
+
+  #details .help .box {
+    height: 50%;
+    min-height: 100px;
+    display: flex;
+    align-items: center;
+  }
+
+  #details .project-details {
+    height: 100%;
+  }
+
+  #details svg {
+    width: 40px;
+  }
+
+  #details .return-to-list,
+  .results .reset-filter,
+  .clear-filter {
+    cursor: pointer;
+  }
+
+  #details .website-url svg,
+  #details .file-url svg,
+  #details .return-to-list svg {
+    height: 16px;
+    width: 16px;
+    margin-right: 4px;
+    margin-top: -4px;
+  }
+
+  #details .type,
+  #details table {
+    font-size: 1rem;
+  }
+
+  #details .col-img {
+    justify-content: flex-end;
+    flex-direction: column;
+  }
+
+  #details img {
+    width: 100%;
+    max-height: 250px;
+    object-fit: cover;
+    border-bottom-left-radius: .25rem;
+  }
+
+  @media(min-width: 992px) {
+    #details {
+      border-top-right-radius: 0 !important;
+      border-bottom-right-radius: 0 !important;
+      border-right: none !important;
+      height: 100%;
+    }
+
+    #leaflet-map {
+      border-top-left-radius: 0 !important;
+      border-bottom-left-radius: 0 !important;
+    }
+  }
+
+  #details:not(.show-project) .project-details,
+  #details:not(.no-results) .no-results,
+  #details:not(.results) .results,
+  #details.show-project .help,
+  #details.no-results .help,
+  #details.results .help {
+    display: none !important;
+  }
+
+  a {
+    text-decoration: none;
+    color: rgb(185, 206, 255);
+  }
+
+</style>
+
+    </head>
+
+    <body>     
+
+<div style="background-color: rgba(0, 127, 238, 0.429);" class="container py-4">
+  
+  <p></p><p></p><h4><b>Welcome! </b>This webpage facilitates local production of <a href="https://globalabc.org/CSEBsustainable-materials-hub/resources/african-standard-wd-ars-13332018-compressed-stabilized-earth">Compressed Stabilised Earth Bricks (CSEB)</a>, in an effort to encourage sustainable construction practices as described by the <a href="https://globalabc.org/sustainable-materials-hub/home">Global Alliance for Building and Construction's sustainable building materials hub</a></h4>
+<p></p><p></p>
+
+  <div class="row filters my-2">
+
+   <!--<div class="col-md-6 col-lg-4 mb-2">
+      
+      <div class="input-group mb-2">
+        <div class="input-group-prepend">
+          <div class="input-group-text">Search</div>
+        </div>
+        <input class="form-control search filter" type="text" name="search" placeholder="">
+      </div>
+    </div>--> 
+
+
+    <div class="col-md-6 col-lg-2 mb-2">
+      <div class="input-group mb-2">
+        <div class="input-group-prepend">
+          <div class="input-group-text">Mpa</div>
+        </div>
+        <select  class="custom-select type filter">
+          <option  value="all" selected>All</option>
+
+              <option value="OneMpa">0-1Mpa</option>
+              <option value="TwoMpa">1-2Mpa</option>
+              <option value="ThreeMpa">2-3Mpa</option>
+              <option value="FourMpa">3-4Mpa</option>
+              <option value="FiveMpa">4Mpa+</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4 mb-2">
+      <div class="input-group mb-2">
+        <div class="input-group-prepend">
+          <div class="input-group-text">Clay %</div>
+        </div>
+        <select  class="custom-select clay filter">
+          <option value="all" selected>All</option>
+
+          <option value="Clay1020" selected>10-20%</option>
+
+          <option value="Clay2030">20-30%</option>
+
+              <option value="Clay3040">30-40%</option>
+            
+              <option value="Clay4050">40-50%</option>
+                            </select>
+      </div>
+      
+    </div>   
+    <div class="col-md-6 col-lg-4 mb-2">
+        <div class="input-group mb-2">
+          <div class="input-group-prepend">
+            <div class="input-group-text">Sand %</div>
+          </div>
+          <select  class="custom-select sand filter">
+            <option value="all" selected>All</option>
+  
+            <option value="Sand5060" selected>50-60%</option>
+  
+            <option value="Sand6070">60-70%</option>
+  
+                <option value="Sand7080">70-80%</option>
+              
+                <option value="Sand8090">80-90%</option>
+                              </select>
+        </div>
+      </div>   
+
+
+
+      </div>
+
+
+  <div class="row mb-4">
+    <div class="col-lg-4 pr-lg-0 mb-4 mb-lg-0">
+      <div class="border rounded position-relative" id="details">
+        
+
+        <div class="project-details row">
+          <div class="col-12">
+            <div class="p-3">
+              <h3 class="name"></h3>
+              <div class="mb-2">
+                <span class="type badge badge-dark"></span>
+                <span class="clay badge badge-dark"></span>
+                <span class="Sand badge badge-dark"></span>
+              </div>
+
+              <a class="btn btn-primary website-url mb-2" href="" target="_blank" hidden>
+                <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="#fff"><path d="M301.148 394.702l-79.2 79.19c-50.778 50.799-133.037 50.824-183.84 0-50.799-50.778-50.824-133.037 0-183.84l79.19-79.2a132.833 132.833 0 0 1 3.532-3.403c7.55-7.005 19.795-2.004 20.208 8.286.193 4.807.598 9.607 1.216 14.384.481 3.717-.746 7.447-3.397 10.096-16.48 16.469-75.142 75.128-75.3 75.286-36.738 36.759-36.731 96.188 0 132.94 36.759 36.738 96.188 36.731 132.94 0l79.2-79.2.36-.36c36.301-36.672 36.14-96.07-.37-132.58-8.214-8.214-17.577-14.58-27.585-19.109-4.566-2.066-7.426-6.667-7.134-11.67a62.197 62.197 0 0 1 2.826-15.259c2.103-6.601 9.531-9.961 15.919-7.28 15.073 6.324 29.187 15.62 41.435 27.868 50.688 50.689 50.679 133.17 0 183.851zm-90.296-93.554c12.248 12.248 26.362 21.544 41.435 27.868 6.388 2.68 13.816-.68 15.919-7.28a62.197 62.197 0 0 0 2.826-15.259c.292-5.003-2.569-9.604-7.134-11.67-10.008-4.528-19.371-10.894-27.585-19.109-36.51-36.51-36.671-95.908-.37-132.58l.36-.36 79.2-79.2c36.752-36.731 96.181-36.738 132.94 0 36.731 36.752 36.738 96.181 0 132.94-.157.157-58.819 58.817-75.3 75.286-2.651 2.65-3.878 6.379-3.397 10.096a163.156 163.156 0 0 1 1.216 14.384c.413 10.291 12.659 15.291 20.208 8.286a131.324 131.324 0 0 0 3.532-3.403l79.19-79.2c50.824-50.803 50.799-133.062 0-183.84-50.802-50.824-133.062-50.799-183.84 0l-79.2 79.19c-50.679 50.682-50.688 133.163 0 183.851z"></path></svg>
+                
+              </a>
+
+              <a class="btn btn-primary file-url mb-2" href="" target="_blank" hidden>
+                <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="#fff"><path d="M369.9 97.98L286.02 14.1c-9-9-21.2-14.1-33.89-14.1H47.99C21.5.1 0 21.6 0 48.09v415.92C0 490.5 21.5 512 47.99 512h288.02c26.49 0 47.99-21.5 47.99-47.99V131.97c0-12.69-5.1-24.99-14.1-33.99zM256.03 32.59c2.8.7 5.3 2.1 7.4 4.2l83.88 83.88c2.1 2.1 3.5 4.6 4.2 7.4h-95.48V32.59zm95.98 431.42c0 8.8-7.2 16-16 16H47.99c-8.8 0-16-7.2-16-16V48.09c0-8.8 7.2-16.09 16-16.09h176.04v104.07c0 13.3 10.7 23.93 24 23.93h103.98v304.01zM208 216c0-4.42-3.58-8-8-8h-16c-4.42 0-8 3.58-8 8v88.02h-52.66c-11 0-20.59 6.41-25 16.72-4.5 10.52-2.38 22.62 5.44 30.81l68.12 71.78c5.34 5.59 12.47 8.69 20.09 8.69s14.75-3.09 20.09-8.7l68.12-71.75c7.81-8.2 9.94-20.31 5.44-30.83-4.41-10.31-14-16.72-25-16.72H208V216zm42.84 120.02l-58.84 62-58.84-62h117.68z"></path></svg>
+                
+              </a>
+
+              <div class="type"></div>
+            </div>
+
+            <div class="px-3 mb-3">
+              <div class="btn btn-primary return-to-list">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="#fff"><path d="M229.9 473.899l19.799-19.799c4.686-4.686 4.686-12.284 0-16.971L94.569 282H436c6.627 0 12-5.373 12-12v-28c0-6.627-5.373-12-12-12H94.569l155.13-155.13c4.686-4.686 4.686-12.284 0-16.971L229.9 38.101c-4.686-4.686-12.284-4.686-16.971 0L3.515 247.515c-4.686 4.686-4.686 12.284 0 16.971L212.929 473.9c4.686 4.686 12.284 4.686 16.971-.001z"/></svg>
+                Return to list
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-img d-none d-lg-flex">
+            <img class="photo" src="">
+          </div>
+        </div>
+
+        <div class="results">
+          <div class="p-3">
+            <h3 class="mb-0"><span id="results-count"></span> <span id="results-count-plural">Data points</h3>
+          </div>
+
+          <table class="table results-table mb-0">
+            <tbody></tbody>
+          </table>
+
+          <div class="px-3 my-3 reset-filter-container" hidden>
+            <div class="btn btn-primary reset-filter">Show all data</div>
+          </div>
+        </div>
+        
+
+        <div class="no-results p-3">
+          <h3>No results</h3>
+          <div class="btn btn-primary reset-filter mt-4">Clear filter</div>
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="col-lg-8 pl-lg-0">
+       
+      <div id="leaflet-map" class="rounded"></div>
+    </div>
+
+</div>
+
+      
+<footer class="">
+  
+<div class="container" style="justify-content: center;">
+  <div class="row">
+    <div>
+      <h4>Special thanks to the Center for Materials Engineering (CME) UCT for their support!</h4>
+      <a href="https://ebe.uct.ac.za/materials-engineering/">https://ebe.uct.ac.za/materials-engineering/</a>
+    </div>
+    <div class="col-md p-6 p-lg-0 col-lg-6 d-flex">
+        <br>
+      <img width="200vw" style="margin-top:2vh" class="footer-logo" src="CME.png">
+    </div>
+  </div>
+</div>
+
+
+
+</footer>
+
+
+        <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.min.js" integrity="sha384-w1Q4orYjBQndcko6MimVbzY0tgp4pWB4lZ7lr30WKz0vr/aWKhXdBNmNb5D92v7s" crossorigin="anonymous"></script>
+
+        
+<!-- leaflet js -->
+<script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+  integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+  crossorigin=""></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+
+<script>
+// map var -----------------------------------------------------------------------------------------------------------------------------
+  var map = L.map("leaflet-map").setView([-33.95608517289068, 18.461008169660417], 0);
+
+  // add basemap  -------------------------------------------------------------------------------------------------------------------------------
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 20,
+    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+}).addTo(map);
+  
+  L.tileLayer("https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}", {
+      attribution: "Map data &copy; <a href='https://www.openstreetmap.org/'>OpenStreetMap</a> contributors, <a href='https://creativecommons.org/licenses/by-sa/2.0/'>CC-BY-SA</a>, Imagery © <a href='https://www.mapbox.com/'>Mapbox</a>",
+      maxZoom: 20,
+      id: "mapbox/streets-v11",
+      tileSize: 512,
+      zoomOffset: -1,
+      accessToken: "pk.eyJ1IjoibmV3YW50dHdvIiwiYSI6ImNscWF3eHFvNjFxMDkyc252bDZnMHo0bW4ifQ.aibMJNvuCUcEtYZmu9VTVw",
+  }).addTo(map);
+
+
+
+  // define icons  -----------------------------------------------------------------------------------------------------------------
+  var OneMpa = L.icon({
+    iconUrl: "x1.png",
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [35, 35],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
+
+  var TwoMpa = L.icon({
+    iconUrl: "x2.png",
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [35, 35],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
+
+  var ThreeMpa = L.icon({
+    iconUrl: "x3.png",
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [35, 35],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
+
+  var FourMpa = L.icon({
+    iconUrl: "x4.png",
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [35, 35],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
+
+  var FiveMpa = L.icon({
+    iconUrl: "x5.png",
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [35, 35],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
+
+  var Clay1020 = L.icon({
+    iconUrl: "p1.png",
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [75,75],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
+
+  var Clay2030 = L.icon({
+    iconUrl: "p2.png",
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [75,75],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
+
+  var Clay3040 = L.icon({
+    iconUrl: "p3.png",
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [75,75],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
+
+  var Clay4050 = L.icon({
+    iconUrl: "p4.png",
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [75,75],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
+
+  var Sand5060 = L.icon({
+    iconUrl: "p2.png",
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [75,75],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
+
+  var Sand6070 = L.icon({
+    iconUrl: "p3.png",
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [75,75],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
+
+  var Sand7080 = L.icon({
+    iconUrl: "p4.png",
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [75,75],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
+
+  var Sand8090 = L.icon({
+    iconUrl: "p5.png",
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [75,75],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
+
+  // define MAP MARKER OBJECTS --------------------------------------------------------------------------------------------------------
+  
+    const entry_1 = L.marker([-33.957096022743414, 18.461944479076145], {
+      "icon": OneMpa,
+      "properties": {
+        "name": "Site #1, 18/11/24, 1.2Mpa, 32/53/10 Clay/sand/cement",
+        "type": "TwoMpa", 
+        "clay": "Clay3040",
+        "sand": "Sand5060",
+      },
+    });
+  
+    const entry_2 = L.marker([-33.96008424171533, 18.46023279636653], {
+      "icon": TwoMpa,
+      "properties": {
+        "name": "Site #2",
+        "type": "OneMpa",
+        "clay": "Clay4050",
+        "sand": "Sand7080",
+      },
+    });
+
+    const entry_3 = L.marker([-33.95479885219124, 18.4605345673696], {
+      "icon": ThreeMpa,
+      "properties": {
+        "name": "Site #3",
+        "type": "ThreeMpa",
+        "clay": "Clay1020",
+        "sand": "Sand6070",
+      },
+    });
+
+    const entry_4 = L.marker([-33.96479885219124, 18.4603345673696], {
+      "icon": FourMpa,
+      "properties": {
+        "name": "Site #4",
+        "type": "FourMpa",
+        "clay": "Clay2030",
+        "sand": "Sand6070",
+      },
+    });
+
+    const entry_5 = L.marker([-33.96911885219124, 18.4610345673696], {
+      "icon": FiveMpa,
+      "properties": {
+        "name": "Site #5",
+        "type": "FiveMpa",
+        "clay": "Clay1020",
+        "sand": "Sand8090",
+      },
+    });
+
+    const entry_6 = L.marker([-33.96925885219124, 18.46068345673696], {
+      "icon": OneMpa,
+      "properties": {
+        "name": "Site #6",
+        "type": "OneMpa",
+        "clay": "Clay1020",
+        "sand": "Sand5060",
+      },
+    });
+
+    const entry_7 = L.marker([-33.96900085219124, 18.4607445673696], {
+      "icon": ThreeMpa,
+      "properties": {
+        "name": "Site #7",
+        "type": "ThreeMpa",
+        "clay": "Clay2030",
+        "sand": "Sand8090",
+      },
+    });
+
+    const entry_8 = L.marker([-33.96999885219124, 18.4604345673696], {
+      "icon": TwoMpa,
+      "properties": {
+        "name": "Site #8",
+        "type": "TwoMpa", 
+        "clay": "Clay3040",
+        "sand": "Sand8090",
+      },
+    });
+
+    const entry_9 = L.marker([-33.96979880009124, 18.4609111673696], {
+      "icon": FiveMpa,
+      "properties": {
+        "name": "Site #9",
+        "type": "FiveMpa",
+        "clay": "Clay4050",
+        "sand": "Sand6070",
+      },
+    });
+
+
+
+  const allEntries = [
+    
+      entry_1,
+    
+      entry_2,
+    
+      entry_3,
+
+      entry_4,
+
+      entry_5,
+
+      entry_6,
+
+      entry_7,
+
+      entry_8, 
+
+      entry_9
+
+  ];
+
+
+
+  // function when selecting a marker
+  function selectMarker(e) {
+    let properties = e.sourceTarget.options.properties;
+
+    $("#details").addClass("show-project").removeClass("no-results results");
+
+    $(".project-details .name").text(properties.name)
+/*
+    $(".project-details .type").html(properties.type)
+    $(".project-details .type").text(properties.type)
+    $(".project-details .name").text(properties.name)*/
+
+  }
+
+  // unselect project and return to list
+  function unselectMarker() {
+    $("#details").removeClass("show-project").addClass("results");
+    $(".leaflet-tooltip").remove();
+  }
+
+  // button to unselect marker and return to list
+  $(".return-to-list").click(function() {
+    unselectMarker();
+    filterMarkers()
+  })
+
+  // make a feature group with all listings and add it to the map
+  const allMarkers = L.featureGroup(allEntries).bindTooltip(function(layer) {return String(layer.options.properties.name)}).on("click", selectMarker);
+
+  var clusteredMarkers = L.markerClusterGroup();
+  clusteredMarkers.addLayer(allMarkers);
+  map.addLayer(clusteredMarkers);
+
+  var filteredLayer = false;
+  var clusteredFilteredMarkers = false;
+
+  // function to show filtered items on the map
+  function filterMarkers() {
+    // if a filtered layer exists, remove it from the map
+    // if not, remove all markers
+    if (filteredLayer != false) {
+      clusteredFilteredMarkers.removeFrom(map)
+    } else {
+      clusteredMarkers.removeFrom(map)
+    };
+
+    // check what the user has selected in the dropdowns
+    let type = $(".filters select.type").val()
+    let clay = $(".filters select.clay").val()
+    let sand = $(".filters select.sand").val()
+
+
+    let filteredEntries = allEntries;
+
+    if (type != "all") {
+      filteredEntries = filteredEntries.filter(entry => entry.options.properties.type == type);
+    }
+    if (clay != "all") {
+      filteredEntries = filteredEntries.filter(entry => entry.options.properties.clay == clay);
+    }
+    if (sand != "all") {
+      filteredEntries = filteredEntries.filter(entry => entry.options.properties.sand == sand);
+    }
+
+    if (filteredEntries.length > 0) {
+      $("#details").removeClass("no-results show-project").addClass("results");
+
+      $("#results-count").text(filteredEntries.length)
+      if (filteredEntries.length == 1) {
+        $("#results-count-plural").text("Specimens")
+      } else {
+        $("#results-count-plural").text("Specimens")
+      }
+
+      $(".results-table tbody").html("");
+
+      filteredLayer = L.featureGroup(filteredEntries).bindTooltip(function(layer) {return String(layer.options.properties.clay)});
+
+      clusteredFilteredMarkers = L.markerClusterGroup();
+      clusteredFilteredMarkers.addLayer(filteredLayer);
+      map.addLayer(clusteredFilteredMarkers);
+
+      $(filteredLayer.getLayers()).each(function() {
+        $(".results-table tbody").append("<tr class='listed-project' data-id='" + this._leaflet_id + "'><td>" + this.options.properties.name + "</td><tr>");
+      })
+
+      map.fitBounds(filteredLayer.getBounds())
+    } else {
+      noFilterResults()
+    }
+
+    if (filteredEntries.length < 289) {
+      $(".reset-filter-container").removeAttr("hidden")
+    } else {
+      $(".reset-filter-container").attr("hidden", "hidden")
+    }
+  }
+
+  // run filter whenever one of the dropdown filters changes
+  $(".filters select").change(function() {
+    filterMarkers()
+  })
+
+  $(".filters .search").keyup(function() {
+    filterMarkers();
+  })
+
+  // function to run when there are no filter matches
+  function noFilterResults() {
+    $("#details").addClass("no-results").removeClass("show-project results");
+  }
+
+  // clear all filters with button
+  $(".reset-filter").click(function() {
+    $("select.filter").val("all")
+    $(".search.filter").val("")
+    filterMarkers();
+  })
+
+  // click on project in the list to select the marker
+   $(document.body).on("click", ".listed-project", function(event) {
+     let marker = $(this).data("name");
+     $(filteredLayer._layers[marker]._icon).click();
+   });
+
+  // set the bounds of the map around all content
+  map.fitBounds(allMarkers.getBounds())
+
+  
+</script>
+
+    </body>
+</html>
