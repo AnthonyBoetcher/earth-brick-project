@@ -330,9 +330,8 @@ footer{
     </div>
 
 </div>
-<button style="margin:10px; border-radius: 10px;"><a style="color:red" href="sedimentscanner.py" download="sedimentscanner.py">Download Sediment Scanner</a></button>
-
-
+<button style="margin:10px; border-radius: 10px;"><a style="color:red" href="sedimentscanner.py" download="sedimentscanner.py">Download Sediment Scanner (beta)</a></button>
+<button style="margin:10px; border-radius: 10px;"><a style="color:red" href="CSEBdocumentation.zip" download="CSEBdocumentation.zip">Documentation</a></button>
       
 <footer class="">
   
@@ -666,7 +665,7 @@ footer{
       "icon": FiveMpa,
       "properties": {
         "name": "Site #9, Anura estate, roadworks",
-        "date": "18/11/24",
+        "date": "19/11/24",
         "type": "FiveMpa",
         "clay": "Clay4050",
         "sand": "Sand6070",
@@ -675,6 +674,18 @@ footer{
       },
     });
 
+    const entry_11 = L.marker([-33.911512, 19.109799], {
+      "icon": FiveMpa,
+      "properties": {
+        "name": "Site #10, Otters Bend trial pits",
+        "date": "20/11/24",
+        "type": "FiveMpa",
+        "clay": "Clay4050",
+        "sand": "Sand6070",
+        "cement":"Cement5",
+        "image": "OttersBend.jpeg"
+      },
+    });
 
   const allEntries = [
     
@@ -698,6 +709,8 @@ footer{
 
       entry_10,
 
+      entry_11,
+
   ];
 
   alert("VERY experimental 'under construction' project");
@@ -716,6 +729,8 @@ function selectMarker(e) {
   $(".project-details .clay").text(properties.clay);
   $(".project-details .sand").text(properties.sand);
   $(".project-details .cement").text(properties.cement);
+  $(".project-details .image").text(properties.image);
+
 
 
   // Add the image to the project details
