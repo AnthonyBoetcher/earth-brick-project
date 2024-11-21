@@ -24,6 +24,65 @@ input_data = pd.DataFrame({
     'Cement': [cement]
 })
 
+# Optional inputs with checkboxes
+use_compression_pressure = st.sidebar.checkbox("Specify Compression Pressure?", value=True)
+compression_pressure = (
+    st.sidebar.slider("Compression Pressure (MPa)", 0.0, 20.0, 10.0)
+    if use_compression_pressure
+    else np.nan
+)
+
+use_density = st.sidebar.checkbox("Specify Density?", value=True)
+density = (
+    st.sidebar.slider("Density (kg/m³)", 1500, 2500, 2000)
+    if use_density
+    else np.nan
+)
+
+use_thermal_conductivity = st.sidebar.checkbox("Specify Thermal Conductivity?", value=True)
+thermal_conductivity = (
+    st.sidebar.slider("Thermal Conductivity (W/m·K)", 0.1, 2.0, 0.5)
+    if use_thermal_conductivity
+    else np.nan
+)
+
+use_porosity = st.sidebar.checkbox("Specify Porosity?", value=True)
+porosity = (
+    st.sidebar.slider("Porosity (%)", 0, 50, 20)
+    if use_porosity
+    else np.nan
+)
+
+use_modulus = st.sidebar.checkbox("Specify Elastic Modulus?", value=True)
+modulus = (
+    st.sidebar.slider("Elastic Modulus (GPa)", 0.1, 50.0, 5.0)
+    if use_modulus
+    else np.nan
+)
+
+# Input data with missing values handled
+input_data = pd.DataFrame({
+    'Sand': [sand],
+    'Silt': [silt],
+    'Clay': [clay],
+    'Cement': [cement],
+    'Compression Pressure': [compression_pressure],
+    'Density': [density],
+    'Thermal Conductivity': [thermal_conductivity],
+    'Porosity': [porosity],
+    'Modulus': [modulus]
+})
+
+# Handle missing values by replacing with mean
+for column in input_data.columns:
+    if input_data[column].isnull().values.any():
+        mean_value = data[column].mean()  # Use the mean of the feature from the dataset
+        input_data[column].fillna(mean_value, inplace=True)
+
+st.write("### Input Parameters (After Handling Missing Values)")
+st.write(input_data)
+
+
 st.write("### Input Ratios")
 st.write(input_data)
 
@@ -32,14 +91,7 @@ st.write(input_data)
 # Load data or use a placeholder
 @st.cache_data
 def load_data():
-    np.random.seed(42)
-    data = pd.DataFrame({
-        'Sand': np.random.randint(30, 70, 100),
-        'Silt': np.random.randint(10, 50, 100),
-        'Clay': np.random.randint(10, 40, 100),
-        'Cement': np.random.randint(0, 15, 100),
-        'Strength': np.random.uniform(2, 10, 100)  # Strength in MPa
-    })
+    data = pd.read_csv('earth_brick_data.csv')  # Replace with your actual file path
     return data
 
 data = load_data()
