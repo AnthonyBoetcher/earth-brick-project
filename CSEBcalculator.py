@@ -73,54 +73,61 @@ input_data = pd.DataFrame({
     'Modulus': [modulus]
 })
 
-# Handle missing values by replacing with mean
+# Handle missing values by replacing with mean or using the actual column data
 for column in input_data.columns:
     if input_data[column].isnull().values.any():
-        mean_value = data[column].mean()  # Use the mean of the feature from the dataset
+        mean_value = input_data[column].mean()  # Use the mean of the feature from the dataset
         input_data[column].fillna(mean_value, inplace=True)
 
 st.write("### Input Parameters (After Handling Missing Values)")
 st.write(input_data)
 
-
-st.write("### Input Ratios")
-st.write(input_data)
-
 # Example dataset (replace this with experimental data)
-# Columns: 'Sand', 'Silt', 'Clay', 'Cement', 'Strength'
-# Load data or use a placeholder
 @st.cache_data
 def load_data():
-    data = pd.read_csv('earth_brick_data.csv')  # Replace with your actual file path
-    return data
+    try:
+        # Read CSV file and handle extra columns or whitespace issues
+        data = pd.read_csv('CSEB.csv', skip_blank_lines=True)  # Ignore blank lines
+        data.columns = data.columns.str.strip()  # Remove leading/trailing whitespace from column names
+
+        # Drop columns with all NaN values or irrelevant columns
+        data = data.dropna(axis=1, how='all')  # Remove empty columns
+
+        # If the dataset has extra spaces or inconsistent column names, we'll remove the extra spaces
+        return data
+    except pd.errors.ParserError as e:
+        st.error(f"Error reading CSV: {e}")
+        return None
 
 data = load_data()
-st.write("### Example Experimental Data")
-st.write(data.head())
 
-# Train a simple model
-X = data[['Sand', 'Silt', 'Clay', 'Cement']]
-y = data['Strength']
+if data is not None:
+    st.write("### Example Experimental Data")
+    st.write(data.head())
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-model = RandomForestRegressor(random_state=42)
-model.fit(X_train, y_train)
+    # Train a simple model using the cleaned data
+    X = data[['Sand', 'Silt', 'Clay', 'Cement']]  # Adjust this based on your dataset
+    y = data['Compressive strength']  # Replace with correct target column name if needed
 
-# Make prediction
-prediction = model.predict(input_data)[0]
-st.write(f"### Predicted Compressive Strength: {prediction:.2f} MPa")
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    model = RandomForestRegressor(random_state=42)
+    model.fit(X_train, y_train)
 
-# Visualization: Predicted vs Actual
-st.write("### Model Performance")
-y_pred = model.predict(X_test)
-fig, ax = plt.subplots()
-sns.scatterplot(x=y_test, y=y_pred, ax=ax)
-ax.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--', linewidth=2)
-ax.set_xlabel("Actual Strength (MPa)")
-ax.set_ylabel("Predicted Strength (MPa)")
-st.pyplot(fig)
+    # Make prediction for user input
+    prediction = model.predict(input_data[['Sand', 'Silt', 'Clay', 'Cement']])[0]
+    st.write(f"### Predicted Compressive Strength: {prediction:.2f} MPa")
 
-# Future Enhancement
+    # Visualization: Predicted vs Actual
+    st.write("### Model Performance")
+    y_pred = model.predict(X_test)
+    fig, ax = plt.subplots()
+    sns.scatterplot(x=y_test, y=y_pred, ax=ax)
+    ax.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--', linewidth=2)
+    ax.set_xlabel("Actual Strength (MPa)")
+    ax.set_ylabel("Predicted Strength (MPa)")
+    st.pyplot(fig)
+
+# Future Enhancement: Upload new experimental data
 st.write("Upload new experimental data below to refine the model.")
 uploaded_file = st.file_uploader("Upload CSV", type=["csv"])
 
@@ -130,17 +137,17 @@ if uploaded_file:
     st.write(new_data)
     
     # Optionally, retrain the model with the new data
-    if 'Strength' in new_data.columns:
+    if 'Compressive strength' in new_data.columns:
         X_new = new_data[['Sand', 'Silt', 'Clay', 'Cement']]
-        y_new = new_data['Strength']
+        y_new = new_data['Compressive strength']
         
-        # Train new model
+        # Train new model with the uploaded data
         X_train_new, X_test_new, y_train_new, y_test_new = train_test_split(X_new, y_new, test_size=0.2, random_state=42)
         model_new = RandomForestRegressor(random_state=42)
         model_new.fit(X_train_new, y_train_new)
         
         # Make new prediction based on updated model
-        prediction_new = model_new.predict(input_data)[0]
+        prediction_new = model_new.predict(input_data[['Sand', 'Silt', 'Clay', 'Cement']])[0]
         st.write(f"### New Predicted Compressive Strength with Uploaded Data: {prediction_new:.2f} MPa")
         
         # Visualize the new model's performance
