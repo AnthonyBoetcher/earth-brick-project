@@ -343,19 +343,233 @@ footer{
 <button style="margin-bottom: 3vh; border-radius: 10px;"><a style="color:white" href="CSEBcalculator.py" download="CSEBcalculator.py">Download CSEB calculator (beta)</a></button>
       
 <footer class="">
-  
-<div class="container" style="justify-content: center;">
-  <div class="row">
+
+
+
+
+
+
+ <!-- CSEB CALCULATOR IN WEBPAGE HTML, CSS AND JS BELOW-->
+<div class="container">
+  <h1>CSEB Predictive Properties</h1>
+
+  <div class="input-section">
+    <h2>Input Ratios</h2>
+
     <div>
-      <h4>Special thanks to the Center for Materials Engineering (CME) UCT for their support!</h4>
-      <a href="https://ebe.uct.ac.za/materials-engineering/">https://ebe.uct.ac.za/materials-engineering/</a>
+      <label for="clay">Clay (%)</label>
+      <input type="range" id="clay" min="0" max="20" value="5" oninput="updateValue('clay-value', this.value, 'unknown-clay')">
+      <span id="clay-value">10</span>
+      <label><input type="checkbox" id="unknown-clay" onchange="updateValue('clay-value', '', 'unknown-clay')"> Unknown</label>
     </div>
-    <div class="col-md p-6 p-lg-0 col-lg-6 d-flex">
-        <br>
-      <img width="200vw" style="margin-top:2vh" class="footer-logo" src="CME.png">
+
+    <div>
+      <label for="cement">Cement (%)</label>
+      <input type="range" id="cement" min="0" max="20" value="5" oninput="updateValue('cement-value', this.value, 'unknown-cement')">
+      <span id="cement-value">10</span>
+      <label><input type="checkbox" id="unknown-cement" onchange="updateValue('cement-value', '', 'unknown-cement')"> Unknown</label>
     </div>
+
+    <div>
+      <label for="density">Density (Kg/m³)</label>
+      <input type="range" id="density" min="1000" max="2500" value="1700" oninput="updateValue('density-value', this.value, 'unknown-density')">
+      <span id="density-value">1700</span>
+      <label><input type="checkbox" id="unknown-density" onchange="updateValue('density-value', '', 'unknown-density')"> Unknown</label>
+    </div>
+
+    <button onclick="predictStrength()">Predict</button>
+  </div>
+
+  <div class="output-section">
+    <h2>Predicted Compressive Strength</h2>
+    <p id="prediction">Predicted Strength: N/A</p>
+  </div>
+
+  <div class="upload-section">
+    <h2>Upload CSV Data</h2>
+    <input type="file" id="file-upload" accept=".csv" onchange="handleFileUpload(event)">
   </div>
 </div>
+
+<script>
+  // Existing dataset as a JavaScript object (array of objects)
+  const existingData = [
+    { clay: 20, cement: 5, density: 1700, "Compressive strength": 2.5 },
+    { clay: 30, cement: 10, density: 1750, "Compressive strength": 3.2 },
+    { clay: 40, cement: 15, density: 1800, "Compressive strength": 4.0 },
+    { clay: 10, cement: 3, density: 1650, "Compressive strength": 1.8 },
+    { clay: 50, cement: 8, density: 1900, "Compressive strength": 4.5 },
+  ];
+
+  let csvData = [];
+
+  // Update slider values or show 'Unknown' if the checkbox is selected
+  function updateValue(id, value, unknownCheckboxId) {
+    const isUnknown = document.getElementById(unknownCheckboxId).checked;
+    document.getElementById(id).textContent = isUnknown ? "Unknown" : value;
+  }
+
+  // Handle CSV file upload
+  function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) {
+      alert("No file selected. Please upload a valid CSV file.");
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      const text = e.target.result;
+
+      try {
+        csvData = parseCSV(text);
+
+        if (csvData.length === 0) {
+          alert("CSV file is empty or improperly formatted.");
+          return;
+        }
+
+        alert("CSV data uploaded successfully!");
+        console.log("Parsed CSV Data:", csvData); // Debugging log
+      } catch (error) {
+        alert("Error parsing CSV file: " + error.message);
+        console.error("Error Details:", error);
+      }
+    };
+
+    reader.onerror = () => {
+      alert("Failed to read the file. Please try again.");
+    };
+
+    reader.readAsText(file);
+  }
+
+  // Parse CSV into a JavaScript array of objects
+  function parseCSV(data) {
+    const rows = data.split("\n").map((row) => row.trim()).filter(Boolean);
+    if (rows.length < 2) throw new Error("CSV must have at least a header row and one data row.");
+
+    const headers = rows.shift().split(";").map((header) => header.trim());
+    return rows.map((row) => {
+      const values = row.split(";").map((value) => value.trim());
+      const obj = {};
+      headers.forEach((header, index) => {
+        obj[header] = values[index] !== "" ? parseFloat(values[index]) || values[index] : null;
+      });
+      return obj;
+    });
+  }
+
+  // Exponential Adjustment for Density
+  function densityStrengthAdjustment(density) {
+    const baselineDensity = 1700; // Baseline at 1700 kg/m³
+    const baselineStrength = 0.5; // Replace with dataset value at 1700 kg/m³
+    const deviation = density - baselineDensity;
+
+    // Apply the exponential formula: y = 0.006e^(0.0025x)
+    const factor = 0.0057 * Math.exp(0.0012 * deviation)*1500;
+
+    // Adjust strength
+    return baselineStrength * factor;
+  }
+
+  // Predict compressive strength
+  function predictStrength() {
+    if (csvData.length === 0 && existingData.length === 0) {
+      alert("Please upload a valid CSV file first.");
+      return;
+    }
+
+    const inputs = {
+      clay: document.getElementById("unknown-clay").checked ? null : parseFloat(document.getElementById("clay").value),
+      cement: document.getElementById("unknown-cement").checked ? null : parseFloat(document.getElementById("cement").value),
+      density: document.getElementById("unknown-density").checked ? null : parseFloat(document.getElementById("density").value),
+    };
+
+    if (inputs.density !== null) {
+      // Adjust strength based on density using the exponential model
+      const adjustedStrengthByDensity = densityStrengthAdjustment(inputs.density);
+
+      // Additional adjustments for clay and cement (can use existing dataset or factors)
+      const clayFactor = inputs.clay ? inputs.clay / 20 : 1; // Example normalization factor
+      const cementFactor = inputs.cement ? inputs.cement / 5 : 1; // Example normalization factor
+
+      const finalStrength = adjustedStrengthByDensity * clayFactor * cementFactor;
+
+      document.getElementById("prediction").textContent = `Predicted Strength: ${finalStrength.toFixed(2)} MPa`;
+    } else {
+      document.getElementById("prediction").textContent = "Predicted Strength: N/A";
+    }
+  }
+</script>
+
+
+
+
+  
+<style>
+  body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f9f9f9;
+}
+
+.container {
+  width: 90%;
+  max-width: 800px;
+  margin: 20px auto;
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+h1, h2 {
+  color: #333;
+}
+
+.input-section, .output-section, .upload-section {
+  margin-top: 20px;
+}
+
+label {
+  display: block;
+  margin: 10px 0 5px;
+  color: #555;
+}
+
+input[type="range"] {
+  width: 100%;
+}
+
+span {
+  margin-left: 5px;
+  font-weight: bold;
+}
+
+button {
+  margin-top: 10px;
+  padding: 10px 20px;
+  background: #007BFF;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #0056b3;
+}
+
+#prediction {
+  font-size: 1.2em;
+  color: #007BFF;
+}
+
+</style>
+
 
 <!-- SUBMISSION FORM ALL CODE BELOW -->
 <title>Send us your soil</title>
@@ -1137,6 +1351,19 @@ function selectMarker(e) {
   }
 }); */
 </script>
+
+<div class="container1" style="margin-left: 10vw; margin-right: 10vw; margin-bottom: 7vh;">
+  <div class="row">
+    <div>
+      <h4>Special thanks to the Center for Materials Engineering (CME) UCT for their support!</h4>
+      <a href="https://ebe.uct.ac.za/materials-engineering/">https://ebe.uct.ac.za/materials-engineering/</a>
+    </div>
+    <div class="col-md p-6 p-lg-0 col-lg-6 d-flex">
+        <br>
+      <img width="200vw" style="margin-top:2vh" class="footer-logo" src="CME.png">
+    </div>
+  </div>
+</div>
 
     </body>
 </html>
