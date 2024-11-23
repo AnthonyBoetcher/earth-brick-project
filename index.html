@@ -356,21 +356,21 @@ footer{
 
     <div>
       <label for="clay">Clay (%)</label>
-      <input type="range" id="clay" min="0" max="20" value="5" oninput="updateValue('clay-value', this.value, 'unknown-clay')">
+      <input type="range" id="clay" min="0" max="18" value="5" oninput="updateValue('clay-value', this.value, 'unknown-clay')">
       <span id="clay-value">10</span>
       <label><input type="checkbox" id="unknown-clay" onchange="updateValue('clay-value', '', 'unknown-clay')"> Unknown</label>
     </div>
 
     <div>
       <label for="cement">Cement (%)</label>
-      <input type="range" id="cement" min="0" max="20" value="5" oninput="updateValue('cement-value', this.value, 'unknown-cement')">
+      <input type="range" id="cement" min="0" max="18" value="5" oninput="updateValue('cement-value', this.value, 'unknown-cement')">
       <span id="cement-value">10</span>
       <label><input type="checkbox" id="unknown-cement" onchange="updateValue('cement-value', '', 'unknown-cement')"> Unknown</label>
     </div>
 
     <div>
       <label for="density">Density (Kg/m³)</label>
-      <input type="range" id="density" min="1000" max="2500" value="1700" oninput="updateValue('density-value', this.value, 'unknown-density')">
+      <input type="range" id="density" min="1000" max="2400" value="1700" oninput="updateValue('density-value', this.value, 'unknown-density')">
       <span id="density-value">1700</span>
       <label><input type="checkbox" id="unknown-density" onchange="updateValue('density-value', '', 'unknown-density')"> Unknown</label>
     </div>
@@ -466,7 +466,7 @@ footer{
     const deviation = density - baselineDensity;
 
     // Apply the exponential formula: y = 0.006e^(0.0025x)
-    const factor = 0.0057 * Math.exp(0.0012 * deviation)*1500;
+    const factor = 0.0057 * Math.exp(0.0012 * deviation)*1000;
 
     // Adjust strength
     return baselineStrength * factor;
