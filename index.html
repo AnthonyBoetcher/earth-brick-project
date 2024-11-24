@@ -347,160 +347,185 @@ footer{
 
 
 
- <!-- CSEB CALCULATOR IN WEBPAGE HTML, CSS AND JS BELOW-->
-<div class="container">
-  <h1>CSEB Predictive Properties</h1>
-
-  <div class="input-section">
-    <h2>Input Ratios</h2>
-
-    <div>
-      <label for="clay">Clay (%)</label>
-      <input type="range" id="clay" min="0" max="18" value="5" oninput="updateValue('clay-value', this.value, 'unknown-clay')">
-      <span id="clay-value">10</span>
-      <label><input type="checkbox" id="unknown-clay" onchange="updateValue('clay-value', '', 'unknown-clay')"> Unknown</label>
+  <div class="container">
+    <h1>Predict CSEB Properties</h1>
+  
+    <div class="input-section">
+      <h2>Input Ratios</h2>
+  
+      <div>
+        <label for="clay">Clay (%)</label>
+        <input type="range" id="clay" min="5" max="15" value="10" oninput="updateValue('clay-value', this.value, 'unknown-clay')">
+        <span id="clay-value">10</span>
+        <label><input type="checkbox" id="unknown-clay" onchange="updateValue('clay-value', '', 'unknown-clay')"> Unknown</label>
+      </div>
+  
+      <div>
+        <label for="cement">Cement (%)</label>
+        <input type="range" id="cement" min="5" max="15" value="10" oninput="updateValue('cement-value', this.value, 'unknown-cement')">
+        <span id="cement-value">10</span>
+        <label><input type="checkbox" id="unknown-cement" onchange="updateValue('cement-value', '', 'unknown-cement')"> Unknown</label>
+      </div>
+  
+      <div>
+        <label for="density">Density (Kg/m³)</label>
+        <input type="range" id="density" min="1500" max="2200" value="1800" oninput="updateValue('density-value', this.value, 'unknown-density')">
+        <span id="density-value">1800</span>
+        <label><input type="checkbox" id="unknown-density" onchange="updateValue('density-value', '', 'unknown-density')"> Unknown</label>
+      </div>
+  
+      <div>
+        <label for="cement-cost">Cost per 50kg 32,5N pocket of cement in South African Rands (ZAR)</label>
+        <input type="number" id="cement-cost" placeholder="Enter cost">
+      </div>
+  
+      <button onclick="calculateAll()">Strength and cost information, including 10% wastage factor</button>
     </div>
-
-    <div>
-      <label for="cement">Cement (%)</label>
-      <input type="range" id="cement" min="0" max="18" value="5" oninput="updateValue('cement-value', this.value, 'unknown-cement')">
-      <span id="cement-value">10</span>
-      <label><input type="checkbox" id="unknown-cement" onchange="updateValue('cement-value', '', 'unknown-cement')"> Unknown</label>
+  
+    <div class="output-section">
+      <h2>Results</h2>
+      <p id="prediction">Predicted 28 day compressive strength: N/A</p>
+      <p id="cost-brick">Cost per brick: N/A</p>
+      <p id="cost-half-brick-wall">Cost per half-brick wall: N/A</p>
+      <p id="cost-one-brick-wall">Cost per one-brick wall: N/A</p>
     </div>
-
-    <div>
-      <label for="density">Density (Kg/m³)</label>
-      <input type="range" id="density" min="1000" max="2400" value="1700" oninput="updateValue('density-value', this.value, 'unknown-density')">
-      <span id="density-value">1700</span>
-      <label><input type="checkbox" id="unknown-density" onchange="updateValue('density-value', '', 'unknown-density')"> Unknown</label>
+  
+    <div class="upload-section">
+      <h2>Upload CSV Data</h2>
+      <input type="file" id="file-upload" accept=".csv" onchange="handleFileUpload(event)">
     </div>
-
-    <button onclick="predictStrength()">Predict</button>
   </div>
-
-  <div class="output-section">
-    <h2>Predicted Compressive Strength</h2>
-    <p id="prediction">Predicted Strength: N/A</p>
-  </div>
-
-  <div class="upload-section">
-    <h2>Upload CSV Data</h2>
-    <input type="file" id="file-upload" accept=".csv" onchange="handleFileUpload(event)">
-  </div>
-</div>
-
-<script>
-  // Existing dataset as a JavaScript object (array of objects)
-  const existingData = [
-    { clay: 20, cement: 5, density: 1700, "Compressive strength": 2.5 },
-    { clay: 30, cement: 10, density: 1750, "Compressive strength": 3.2 },
-    { clay: 40, cement: 15, density: 1800, "Compressive strength": 4.0 },
-    { clay: 10, cement: 3, density: 1650, "Compressive strength": 1.8 },
-    { clay: 50, cement: 8, density: 1900, "Compressive strength": 4.5 },
-  ];
-
-  let csvData = [];
-
-  // Update slider values or show 'Unknown' if the checkbox is selected
-  function updateValue(id, value, unknownCheckboxId) {
-    const isUnknown = document.getElementById(unknownCheckboxId).checked;
-    document.getElementById(id).textContent = isUnknown ? "Unknown" : value;
-  }
-
-  // Handle CSV file upload
-  function handleFileUpload(event) {
-    const file = event.target.files[0];
-    if (!file) {
-      alert("No file selected. Please upload a valid CSV file.");
-      return;
+  
+  <script>
+    const brickVolume = 0.001815; // Volume of a brick in m³
+    const cementVolumePerPocket = 0.034722; // Cement volume per 50kg pocket in m³
+    const cementDensity = 1440; // Density of cement in kg/m³
+  
+    // Update slider values or show 'Unknown' if the checkbox is selected
+    function updateValue(id, value, unknownCheckboxId) {
+      const isUnknown = document.getElementById(unknownCheckboxId).checked;
+      document.getElementById(id).textContent = isUnknown ? "Unknown" : value;
     }
-
-    const reader = new FileReader();
-
-    reader.onload = (e) => {
-      const text = e.target.result;
-
-      try {
-        csvData = parseCSV(text);
-
-        if (csvData.length === 0) {
-          alert("CSV file is empty or improperly formatted.");
-          return;
-        }
-
-        alert("CSV data uploaded successfully!");
-        console.log("Parsed CSV Data:", csvData); // Debugging log
-      } catch (error) {
-        alert("Error parsing CSV file: " + error.message);
-        console.error("Error Details:", error);
+  
+    // Combined function for predicting strength and calculating cost
+    function calculateAll() {
+      const inputs = {
+        clay: document.getElementById("unknown-clay").checked ? null : parseFloat(document.getElementById("clay").value),
+        cement: document.getElementById("unknown-cement").checked ? null : parseFloat(document.getElementById("cement").value),
+        density: document.getElementById("unknown-density").checked ? null : parseFloat(document.getElementById("density").value),
+      };
+  
+      const cementCostPerPocket = parseFloat(document.getElementById("cement-cost").value);
+  
+      if (!cementCostPerPocket) {
+        alert("Please enter a valid cost per 50kg pocket of cement.");
+        return;
       }
-    };
+  
+      // Predict compressive strength
+      let predictionText = "Predicted Strength: N/A";
+      if (inputs.density !== null) {
+        const adjustedStrengthByDensity = densityStrengthAdjustment(inputs.density);
+  
+        const clayFactor = inputs.clay ? inputs.clay / 20 : 1; // Example normalization factor
+        const cementFactor = inputs.cement ? inputs.cement / 5 : 1; // Example normalization factor
+  
+        const finalStrength = adjustedStrengthByDensity * clayFactor * cementFactor;
+  
+        predictionText = `Predicted Strength: ${finalStrength.toFixed(2)} MPa`;
+      }
+  
+      // Calculate cost with 10% wastage
+      const cementPercentage = inputs.cement || 0;
+      const cementVolumePerBrick = (cementPercentage / 100) * brickVolume * 1.1; // Add 10% for wastage
+      const pocketsPerBrick = cementVolumePerBrick / cementVolumePerPocket;
+      const costPerBrick = pocketsPerBrick * cementCostPerPocket;
+  
+      const costHalfBrickWall = costPerBrick * 52;
+      const costFullBrickWall = costPerBrick * 104;
+  
+      const costbrick = `
+      Cost per Imperial brick: ${costPerBrick.toFixed(2)} ZAR
+    `;
+      const costhalfbrick=`
+    Cost for 1m² half-brick wall: ${costHalfBrickWall.toFixed(2)} ZAR
+    `;
+    const costonebrick=`
+      Cost for 1m² one-brick wall: ${costFullBrickWall.toFixed(2)} ZAR
+      `;
 
-    reader.onerror = () => {
-      alert("Failed to read the file. Please try again.");
-    };
+  
+      // Display both results
+      document.getElementById("prediction").textContent = predictionText;
+      document.getElementById("cost-brick").textContent = costbrick;
+      document.getElementById("cost-half-brick-wall").textContent = costhalfbrick;
+      document.getElementById("cost-one-brick-wall").textContent = costonebrick;
 
-    reader.readAsText(file);
-  }
-
-  // Parse CSV into a JavaScript array of objects
-  function parseCSV(data) {
-    const rows = data.split("\n").map((row) => row.trim()).filter(Boolean);
-    if (rows.length < 2) throw new Error("CSV must have at least a header row and one data row.");
-
-    const headers = rows.shift().split(";").map((header) => header.trim());
-    return rows.map((row) => {
-      const values = row.split(";").map((value) => value.trim());
-      const obj = {};
-      headers.forEach((header, index) => {
-        obj[header] = values[index] !== "" ? parseFloat(values[index]) || values[index] : null;
+    }
+  
+    // Exponential Adjustment for Density
+    function densityStrengthAdjustment(density) {
+      const baselineDensity = 1700; // Baseline at 1700 kg/m³
+      const baselineStrength = 0.5; // Replace with dataset value at 1700 kg/m³
+      const deviation = density - baselineDensity;
+  
+      // Apply the exponential formula: y = 0.006e^(0.0025x)
+      const factor = 0.0057 * Math.exp(0.0012 * deviation) * 1000;
+  
+      return baselineStrength * factor;
+    }
+  
+    // Existing file upload and CSV parsing logic
+    function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) {
+        alert("No file selected. Please upload a valid CSV file.");
+        return;
+      }
+  
+      const reader = new FileReader();
+  
+      reader.onload = (e) => {
+        const text = e.target.result;
+  
+        try {
+          csvData = parseCSV(text);
+  
+          if (csvData.length === 0) {
+            alert("CSV file is empty or improperly formatted.");
+            return;
+          }
+  
+          alert("CSV data uploaded successfully!");
+        } catch (error) {
+          alert("Error parsing CSV file: " + error.message);
+        }
+      };
+  
+      reader.onerror = () => {
+        alert("Failed to read the file. Please try again.");
+      };
+  
+      reader.readAsText(file);
+    }
+  
+    function parseCSV(data) {
+      const rows = data.split("\n").map((row) => row.trim()).filter(Boolean);
+      if (rows.length < 2) throw new Error("CSV must have at least a header row and one data row.");
+  
+      const headers = rows.shift().split(";").map((header) => header.trim());
+      return rows.map((row) => {
+        const values = row.split(";").map((value) => value.trim());
+        const obj = {};
+        headers.forEach((header, index) => {
+          obj[header] = values[index] !== "" ? parseFloat(values[index]) || values[index] : null;
+        });
+        return obj;
       });
-      return obj;
-    });
-  }
-
-  // Exponential Adjustment for Density
-  function densityStrengthAdjustment(density) {
-    const baselineDensity = 1700; // Baseline at 1700 kg/m³
-    const baselineStrength = 0.5; // Replace with dataset value at 1700 kg/m³
-    const deviation = density - baselineDensity;
-
-    // Apply the exponential formula: y = 0.006e^(0.0025x)
-    const factor = 0.0057 * Math.exp(0.0012 * deviation)*1000;
-
-    // Adjust strength
-    return baselineStrength * factor;
-  }
-
-  // Predict compressive strength
-  function predictStrength() {
-    if (csvData.length === 0 && existingData.length === 0) {
-      alert("Please upload a valid CSV file first.");
-      return;
     }
-
-    const inputs = {
-      clay: document.getElementById("unknown-clay").checked ? null : parseFloat(document.getElementById("clay").value),
-      cement: document.getElementById("unknown-cement").checked ? null : parseFloat(document.getElementById("cement").value),
-      density: document.getElementById("unknown-density").checked ? null : parseFloat(document.getElementById("density").value),
-    };
-
-    if (inputs.density !== null) {
-      // Adjust strength based on density using the exponential model
-      const adjustedStrengthByDensity = densityStrengthAdjustment(inputs.density);
-
-      // Additional adjustments for clay and cement (can use existing dataset or factors)
-      const clayFactor = inputs.clay ? inputs.clay / 20 : 1; // Example normalization factor
-      const cementFactor = inputs.cement ? inputs.cement / 5 : 1; // Example normalization factor
-
-      const finalStrength = adjustedStrengthByDensity * clayFactor * cementFactor;
-
-      document.getElementById("prediction").textContent = `Predicted Strength: ${finalStrength.toFixed(2)} MPa`;
-    } else {
-      document.getElementById("prediction").textContent = "Predicted Strength: N/A";
-    }
-  }
-</script>
+  </script>
+  
+  
 
 
 
