@@ -620,7 +620,246 @@ p {
 
 </style>
 
+<style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
 
+    header {
+      background-color: #007BFF;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .container {
+      padding: 1rem;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    .materials-list {
+      margin-top: 1rem;
+      padding: 1rem;
+      background-color: white;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .results {
+      margin-top: 2rem;
+      padding: 1rem;
+      background-color: #e9f7ef;
+      border-left: 5px solid #28a745;
+      border-radius: 5px;
+    }
+
+    button {
+      background-color: #28a745;
+      color: white;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #218838;
+    }
+
+    .material-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .material-item button {
+      margin-left: 5px;
+    }
+
+    .orientation {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>U-Value Calculator for Composite Walls</h1>
+  </header>
+  <div class="container">
+    <div class="form-group">
+      <label for="material">Material:</label>
+      <input type="text" id="material" placeholder="Enter material name">
+    </div>
+    <div class="form-group">
+      <label for="thickness">Thickness (m):</label>
+      <input type="number" id="thickness" placeholder="Enter thickness in meters" step="0.01">
+    </div>
+    <div class="form-group">
+      <label for="lambda">Thermal Conductivity (λ) (W/mK):</label>
+      <input type="number" id="lambda" placeholder="Enter thermal conductivity" step="0.01">
+    </div>
+    <button onclick="addMaterial()">Add Material</button>
+
+    <div class="materials-list" id="materials-list">
+      <h3>Materials List:</h3>
+      <ul id="materials"></ul>
+    </div>
+
+    <button onclick="calculateUValue()">Calculate U-Value</button>
+
+    <div class="results" id="results" style="display: none;">
+      <h3>Results:</h3>
+      <p><strong>U-Value:</strong> <span id="u-value"></span> W/m²K</p>
+      <div id="compliance"></div>
+    </div>
+
+  </div>
+
+  <script>
+    const materials = [];
+    const internationalStandards = {
+      
+      "UK new construction": 0.18,
+      "UK extensions": 0.30,
+      "Germany": 0.24,
+      "Australia": 0.25,
+      // Add more countries and their standards as needed
+    };
+
+    function addMaterial() {
+      const material = document.getElementById('material').value;
+      const thickness = parseFloat(document.getElementById('thickness').value);
+      const lambda = parseFloat(document.getElementById('lambda').value);
+
+      if (!material || isNaN(thickness) || isNaN(lambda)) {
+        alert('Please fill in all fields correctly.');
+        return;
+      }
+
+      const resistance = thickness / lambda;
+      materials.push({ material, thickness, lambda, resistance });
+
+      updateMaterialsList();
+      clearInputs();
+    }
+
+    function updateMaterialsList() {
+      const materialsList = document.getElementById('materials');
+      materialsList.innerHTML = '';
+
+      materials.forEach((mat, index) => {
+        const listItem = document.createElement('li');
+        listItem.classList.add('material-item');
+        listItem.innerHTML = `
+          ${mat.material} - Thickness: ${mat.thickness} m, λ: ${mat.lambda} W/mK, R: ${mat.resistance.toFixed(2)} m²K/W
+          <button onclick="editMaterial(${index})">Edit</button>
+          <button onclick="moveUp(${index})">↑</button>
+          <button onclick="moveDown(${index})">↓</button>
+          <button onclick="removeMaterial(${index})">Remove</button>
+        `;
+        materialsList.appendChild(listItem);
+      });
+    }
+
+    function editMaterial(index) {
+      const mat = materials[index];
+      document.getElementById('material').value = mat.material;
+      document.getElementById('thickness').value = mat.thickness;
+      document.getElementById('lambda').value = mat.lambda;
+      materials.splice(index, 1);
+      updateMaterialsList();
+    }
+
+    function moveUp(index) {
+      if (index > 0) {
+        const temp = materials[index];
+        materials[index] = materials[index - 1];
+        materials[index - 1] = temp;
+        updateMaterialsList();
+      }
+    }
+
+    function moveDown(index) {
+      if (index < materials.length - 1) {
+        const temp = materials[index];
+        materials[index] = materials[index + 1];
+        materials[index + 1] = temp;
+        updateMaterialsList();
+      }
+    }
+
+    function removeMaterial(index) {
+      materials.splice(index, 1);
+      updateMaterialsList();
+    }
+
+    function calculateUValue() {
+      const Rsi = 0.13; // Internal thermal resistance (m²K/W)
+      const Rse = 0.04; // External thermal resistance (m²K/W)
+
+      const totalResistance = materials.reduce((sum, mat) => sum + mat.resistance, Rsi + Rse);
+      const uValue = 1 / totalResistance;
+
+      document.getElementById('u-value').textContent = uValue.toFixed(3);
+      document.getElementById('results').style.display = 'block';
+
+      checkCompliance(uValue);
+    }
+
+    function checkCompliance(uValue) {
+      let complianceText = '<h4>Compliance with International Standards:</h4>';
+      let compliantCountries = [];
+      let nonCompliantCountries = [];
+
+      for (const [country, standard] of Object.entries(internationalStandards)) {
+        if (uValue <= standard) {
+          compliantCountries.push(country);
+        } else {
+          nonCompliantCountries.push(country);
+        }
+      }
+
+      if (compliantCountries.length > 0) {
+        complianceText += `<p>Your composite wall meets the U-value requirements in the following countries: ${compliantCountries.join(', ')}.</p>`;
+      } else {
+        complianceText += '<p>Your composite wall does not meet the U-value requirements in any of the listed countries.</p>';
+      }
+
+      if (nonCompliantCountries.length > 0) {
+        complianceText += `<p>Your composite wall does not meet the U-value requirements in the following countries: ${nonCompliantCountries.join(', ')}.</p>`;
+      }
+
+      document.getElementById('compliance').innerHTML = complianceText;
+    }
+
+    function clearInputs() {
+      document.getElementById('material').value = '';
+      document.getElementById('thickness').value = '';
+      document.getElementById('lambda').value = '';
+    }
+  </script>
 
 
 
@@ -1421,6 +1660,8 @@ function selectMarker(e) {
     </div>
   </div>
 </div>
+
+
 
     </body>
 </html>
